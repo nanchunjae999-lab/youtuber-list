@@ -1,6 +1,8 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
 const express = require('express');
 const ExcelJS = require('exceljs');
 const { collect } = require('./lib/youtube');
@@ -11,11 +13,35 @@ const PORT = process.env.PORT || 3456;
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+/** 테스트 키 로드 — 환경변수 우선, 없으면 로컬 파일 (키 값은 절대 클라이언트로 전송하지 않음) */
+function getTestApiKey() {
+  if (process.env.TEST_API_KEY) return process.env.TEST_API_KEY.trim();
+  try {
+    return fs
+      .readFileSync(path.join(os.homedir(), '.config', 'youtuber_list', 'test-api-key'), 'utf8')
+      .trim();
+  } catch {
+    return null;
+  }
+}
+
+/** 테스트 키 사용 가능 여부 (키 값 노출 없이 여부만 응답) */
+app.get('/api/test-key-status', (req, res) => {
+  res.json({ available: Boolean(getTestApiKey()) });
+});
+
 /** 수집 실행 — NDJSON 스트리밍 (진행상황 실시간 전송) */
 app.post('/api/collect', async (req, res) => {
-  const { apiKeys, keyword } = req.body || {};
+  let { apiKeys, keyword } = req.body || {};
+  const useTestKey = Boolean(req.body?.useTestKey);
 
-  if (!Array.isArray(apiKeys) || apiKeys.filter((k) => k && k.trim()).length === 0) {
+  if (useTestKey) {
+    const testKey = getTestApiKey();
+    if (!testKey) {
+      return res.status(400).json({ error: '서버에 테스트 키가 설정되어 있지 않습니다.' });
+    }
+    apiKeys = [testKey];
+  } else if (!Array.isArray(apiKeys) || apiKeys.filter((k) => k && k.trim()).length === 0) {
     return res.status(400).json({ error: 'API 키를 1개 이상 입력해주세요.' });
   }
   if (!keyword || !keyword.trim()) {

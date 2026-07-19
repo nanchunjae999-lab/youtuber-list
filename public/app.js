@@ -9,6 +9,28 @@ $('keyword').value = localStorage.getItem('yt_keyword') || '';
 $('api-keys').addEventListener('input', (e) => localStorage.setItem('yt_api_keys', e.target.value));
 $('keyword').addEventListener('input', (e) => localStorage.setItem('yt_keyword', e.target.value));
 
+// ── 테스트키 ─────────────────────────────────────────────────
+fetch('/api/test-key-status')
+  .then((r) => r.json())
+  .then(({ available }) => {
+    if (!available) return;
+    $('test-key-wrap').classList.remove('hidden');
+    $('use-test-key').checked = localStorage.getItem('yt_use_test_key') === '1';
+    applyTestKeyState();
+  })
+  .catch(() => {});
+
+$('use-test-key').addEventListener('change', () => {
+  localStorage.setItem('yt_use_test_key', $('use-test-key').checked ? '1' : '0');
+  applyTestKeyState();
+});
+
+function applyTestKeyState() {
+  const on = $('use-test-key').checked;
+  $('api-keys').disabled = on;
+  $('api-keys').placeholder = on ? '테스트키를 사용합니다' : 'AIzaSy... (한 줄에 키 1개)';
+}
+
 // ── UI 토글 ──────────────────────────────────────────────────
 $('btn-key-help').addEventListener('click', () => $('key-help').classList.toggle('hidden'));
 [
@@ -34,6 +56,7 @@ function log(msg, cls = '') {
 function buildPayload() {
   const val = (id) => $(id).value.trim();
   const payload = {
+    useTestKey: $('use-test-key').checked,
     apiKeys: val('api-keys').split('\n').map((k) => k.trim()).filter(Boolean),
     keyword: val('keyword'),
     searchPages: val('search-pages'),
@@ -54,7 +77,7 @@ function buildPayload() {
 
 async function startCollect() {
   const payload = buildPayload();
-  if (payload.apiKeys.length === 0) return alert('API 키를 1개 이상 입력해주세요.');
+  if (!payload.useTestKey && payload.apiKeys.length === 0) return alert('API 키를 1개 이상 입력해주세요.');
   if (!payload.keyword) return alert('검색 키워드를 입력해주세요.');
 
   $('btn-collect').disabled = true;
@@ -63,7 +86,7 @@ async function startCollect() {
   $('result-card').classList.add('hidden');
   $('log').innerHTML = '';
   $('quota-used').textContent = '';
-  log(`수집 시작 — API 키 ${payload.apiKeys.length}개 사용`);
+  log(payload.useTestKey ? '수집 시작 — 테스트키 사용' : `수집 시작 — API 키 ${payload.apiKeys.length}개 사용`);
 
   try {
     const res = await fetch('/api/collect', {
