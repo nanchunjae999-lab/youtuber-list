@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: youtube-contact-collector
+    name: curlycurlythanks
     runtime: node
     plan: free
     buildCommand: npm install
