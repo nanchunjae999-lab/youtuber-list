@@ -1,0 +1,16 @@
+{
+  "name": "youtuber-list",
+  "version": "1.0.0",
+  "description": "유튜브 컨택메일 리스트 수집기 - 키워드/구독자수/조회수비율/참여율 필터",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2"
+  }
+}
