@@ -1,0 +1,6 @@
+{
+  // 영역: 영상·콘텐츠 — 영역 나누기(2026-11-08 사용자 결정 '폴더 그대로 + 영역표·연결'). 영역표 ~/projects/INVENTORY.md.
+  // 아래 skills.paths 가 위쪽 ~/projects/opencode.jsonc(전부)를 덮는다 — 다른 영역 스킬이 필요하면 카테고리를 더한다.
+  "skills": {"paths": ["~/.config/opencode/skill-library/reference", "~/.config/opencode/skill-library/content"]},
+  "instructions": ["~/.config/opencode/instructions/areas/video.md"]
+}
