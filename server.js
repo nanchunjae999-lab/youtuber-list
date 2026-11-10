@@ -6,10 +6,17 @@ const os = require('os');
 const express = require('express');
 const ExcelJS = require('exceljs');
 const { collect } = require('./lib/youtube');
+const { createGate, DEFAULT_DASHBOARD_URL, DEFAULT_PUBLIC_KEY } = require('./lib/site-gate');
 
 const app = express();
 const PORT = process.env.PORT || 3456;
 
+// 문지기 — 대시보드 허용 기기 + 초대 링크만 (lib/site-gate.js, 2026-11-10). 정적 파일·API 전부 이 뒤.
+// Render 는 앞단 프록시라 req.path·query 만 쓰고 IP 는 보지 않는다.
+app.use(createGate({
+  publicKey: process.env.SITE_GATE_PUBLIC_KEY || DEFAULT_PUBLIC_KEY,
+  dashboardUrl: process.env.SITE_GATE_DASHBOARD_URL || DEFAULT_DASHBOARD_URL,
+}));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
