@@ -34,6 +34,7 @@ async function start(t, reply) {
     fetch: async (url, init) => {
       calls.push(String(url));
       if (reply instanceof Error) throw reply;
+      if (typeof reply === 'function') return reply();
       if (reply === 'hang') return new Promise((_r, reject) => init.signal.addEventListener('abort', () => reject(new Error('abort'))));
       return reply;
     },
@@ -105,4 +106,15 @@ test('Y4 invite pass: 200 allowed · 403 refused · down/5xx/timeout → 503 · 
   assert.equal(fresh.calls.length, 0);
   const stale = await (await start(t, new Error('down'))).get('/', { cookies: { rd_pass: pass, rd_ok: token('ok', INVITE, 'yt-email', NOW - 7 * 3_600_000) } });
   assert.equal(stale.status, 503);
+});
+
+test('Y5 an invite check that fails once is retried; devices are asked once', async (t) => {
+  const pass = token('pass', INVITE, 'yt-email');
+  let n = 0;
+  const flaky = await start(t, () => (n++ === 0 ? new Response('x', { status: 502 }) : okReply(INVITE)));
+  assert.equal((await flaky.get('/', { headers: DOC, cookies: { rd_pass: pass } })).status, 200);
+  assert.equal(flaky.calls.length, 2);
+  const device = await start(t, new Error('down'));
+  await device.get('/', { cookies: { rd_pass: token('pass', DEVICE, 'yt-email') } });
+  assert.equal(device.calls.length, 1);
 });
